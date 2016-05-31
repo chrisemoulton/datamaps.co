@@ -64,12 +64,6 @@ export default class DatamapBox extends Component {
           mouseEnterOnSubunit={this.mouseEnterOnSubunit}
           infoWindowPos={infoWindowPos}
         />
-        <HoverInfo
-          active={infoWindowActive}
-          position={infoWindowPos}
-          name={activeSubunitName}
-          value={activeSubunitValue}
-        />
       </div>
     )
   }

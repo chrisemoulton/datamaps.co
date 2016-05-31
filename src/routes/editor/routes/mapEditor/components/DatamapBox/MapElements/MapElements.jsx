@@ -55,7 +55,7 @@ export default class MapElements extends Component {
   }
 
   render() {
-    const svgWidth = 750
+    const svgWidth = 850
     const svgHeight = svgWidth * 0.8
     const { mapUi, extremeValues, regionData } = this.props
     const noDataColor = mapUi.get('noDataColor')
@@ -66,6 +66,7 @@ export default class MapElements extends Component {
       width: svgWidth,
       height: svgHeight,
       fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+      border: '1px solid red',
     }
 
     const mapLegend = (

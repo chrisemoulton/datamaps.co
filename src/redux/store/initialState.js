@@ -2,6 +2,7 @@ import { Map } from 'immutable'
 
 import worldEmptyData, { countryCodes } from '../../data/world-empty-data'
 import usaEmptyData, { stateCodes } from '../../data/usa-empty-data'
+import usCountiesEmptyData from '../../data/us-counties-empty-data'
 
 export default {
   mapType: '',
@@ -12,6 +13,7 @@ export default {
   regionData: Map({
     usa: usaEmptyData,
     world: worldEmptyData,
+    'us-counties': usCountiesEmptyData,
   }),
   sortState: Map({ key: 'regionName', direction: 'ASC' }),
   mapUi: Map({
