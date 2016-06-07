@@ -56,6 +56,8 @@ export default class Datamap extends Component {
           .style('stroke', '#FF5722')
           .style('stroke-width', 2)
 
+        this.parentNode.appendChild(this)
+
         tooltip
           .style('opacity', 1)
           .html(`<div>${data.properties.name}<br /></div>`)
