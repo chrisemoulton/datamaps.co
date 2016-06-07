@@ -2,106 +2,56 @@ import React, { Component, PropTypes } from 'react'
 import d3 from 'd3'
 import { Map } from 'immutable'
 
-import config from 'config/maps'
-import DatamapSubunit from './DatamapSubunit'
+import style from './Datamap.css'
 
 export default class Datamap extends Component {
-  constructor(props) {
-    super(props)
-    this.handleMouseEnterOnSubunit = this.handleMouseEnterOnSubunit.bind(this)
+  componentDidMount() {
+    const tooltip = d3.select('body').append('div')
+      .attr('class', style.tooltip)
+      .style('opacity', 0)
 
-    this.state = {
-      topoJSONfeatures: this.props.topoData.get(this.props.mapType),
-      path: this.path(this.props.svgWidth, this.props.svgHeight, this.props.mapType),
-      svgResized: false,
-    }
+    const { svgWidth, svgHeight } = this.props
+    const projection = d3.geo.albersUsa().scale(svgWidth).translate([svgWidth / 2, svgHeight / 2])
+    const path = d3.geo.path().projection(projection)
+
+    d3.select('#datamap')
+      .selectAll('path')
+      .data(this.props.topoData.get(this.props.mapType))
+      .enter()
+      .append('path')
+      .style('fill', '#000')
+      .attr('class', 'map-subunit')
+      .attr('d', path)
+      .on('mouseover', function (data) {
+        d3.select(this).style('fill', '#fff8ee')
+
+        tooltip
+          .style('opacity', 1)
+          .html(`<div>${data.properties.name}<br />${data.properties.id}</div>`)
+      })
+      .on('mousemove', function () {
+        tooltip
+          .style('left', (d3.event.pageX + 20) + 'px')
+          .style('top', (d3.event.pageY + 20) + 'px')
+      })
+      .on('mouseout', function () {
+        d3.select(this).style('fill', '#000')
+        tooltip.style('opacity', 0)
+      })
   }
 
-  componentWillReceiveProps(nextProps) {
-    const { svgWidth, svgHeight, mapType, topoData } = nextProps
-    const path = this.path(svgWidth, svgHeight, mapType)
-
-    // const svgResized = nextProps.svgWidth !== this.props.svgWidth ||
-    //   nextProps.svgHeight !== this.props.svgHeight
-
-    const topoJSONfeatures = topoData.get(mapType)
-
-    if (mapType !== this.props.mapType) {
-      this.setState({ path, topoJSONfeatures })
-    }
-  }
-
-  path(svgWidth, svgHeight, mapType) {
-    const mapConfig = config.configs[mapType].mapUi
-    const projectionName = mapConfig.projection
-    const scaleDenominator = mapConfig.scaleDenominator
-
-    const projection = d3.geo[projectionName]().scale(svgWidth / scaleDenominator)
-      .translate([svgWidth / 2, svgHeight / 2])
-
-    return d3.geo.path().projection(projection)
-  }
-
-  handleMouseEnterOnSubunit(name, value, index) {
-    const data = this.state.topoJSONfeatures
-    const newData = [
-      ...data.slice(0, index),
-      ...data.slice(index + 1),
-      data[index],
-    ]
-
-    this.setState({ topoJSONfeatures: newData })
-    this.props.mouseEnterOnSubunit(name, value)
-  }
-
-  renderDatamapSubunits() {
-    const { colorScale, noDataColor, borderColor } = this.props
-
-    return this.state.topoJSONfeatures.map((feature, index) => {
-      const subunitData = this.props.regionData.find((datum) => datum.get('code') === feature.id)
-      const subunitValue = subunitData ? subunitData.get('value') : null
-      const fillColor = subunitValue === '' ? noDataColor : colorScale(subunitValue)
-
-      return (
-        <DatamapSubunit
-          key={feature.id}
-          index={index}
-          path={() => this.state.path(feature)}
-          name={feature.properties.name}
-          value={subunitValue}
-          svgResized={this.state.svgResized}
-          fillColor={fillColor}
-          borderColor={borderColor}
-          mouseEnterOnSubunit={this.handleMouseEnterOnSubunit}
-        />
-      )
-    })
+  componentWillUnmount() {
+    d3.select('#datamap').remove()
   }
 
   render() {
-    return (
-      <g
-        onMouseMove={this.props.mouseMoveOnDatamap}
-        onMouseEnter={this.props.mouseEnterOnDatamap}
-        onMouseLeave={this.props.mouseLeaveDatamap}
-      >
-        {this.renderDatamapSubunits()}
-      </g>
-    )
+    return <g id="datamap"></g>
   }
 }
 
 Datamap.propTypes = {
-  topoData: PropTypes.instanceOf(Map).isRequired,
-  mapType: PropTypes.string.isRequired,
   svgWidth: PropTypes.number.isRequired,
   svgHeight: PropTypes.number.isRequired,
-  mouseMoveOnDatamap: PropTypes.func.isRequired,
-  mouseEnterOnDatamap: PropTypes.func.isRequired,
-  mouseLeaveDatamap: PropTypes.func.isRequired,
-  mouseEnterOnSubunit: PropTypes.func.isRequired,
-  regionData: PropTypes.instanceOf(Map).isRequired,
-  colorScale: PropTypes.func.isRequired,
-  noDataColor: PropTypes.string.isRequired,
-  borderColor: PropTypes.string.isRequired,
+  topoData: PropTypes.instanceOf(Map).isRequired,
+  mapType: PropTypes.string.isRequired,
 }
