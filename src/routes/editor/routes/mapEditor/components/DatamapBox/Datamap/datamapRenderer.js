@@ -19,56 +19,61 @@ export default (datamapContainer, props) => {
     .attr('class', style.tooltip)
     .style('opacity', 0)
 
-  const mapConfig = config.configs[mapType].mapUi
-  const projectionName = mapConfig.projection
-  const scaleDenominator = mapConfig.scaleDenominator
+  const subunitPath = () => {
+    const mapConfig = config.configs[mapType].mapUi
+    const projectionName = mapConfig.projection
+    const scaleDenominator = mapConfig.scaleDenominator
 
-  const projection = d3.geo[projectionName]().scale(svgWidth / scaleDenominator)
-    .translate([svgWidth / 2, svgHeight / 2])
-  const path = d3.geo.path().projection(projection)
+    const projection = d3.geo[projectionName]().scale(svgWidth / scaleDenominator)
+      .translate([svgWidth / 2, svgHeight / 2])
+    return d3.geo.path().projection(projection)
+  }
+
+  const subunitValue = (data) => {
+    const subunitData = regionData.find((datum) => datum.get('code') === data.id)
+    return subunitData ? subunitData.get('value') : ''
+  }
+
+  const addDefaultSubunitStyle = (subunit, fill) => {
+    subunit
+      .style('fill', fill)
+      .style('stroke', borderColor)
+      .style('stroke-width', 0.5)
+  }
 
   d3.select(datamapContainer)
     .selectAll('path')
     .data(topoData.get(mapType))
     .enter()
     .append('path')
-    .attr('data-fill', (data) => {
-      const subunitData = regionData.find((datum) => datum.get('code') === data.id)
-      const subunitValue = subunitData ? subunitData.get('value') : null
-      return subunitValue === '' ? noDataColor : colorScale(subunitValue)
-    })
-    .style('fill', function () {
-      return this.getAttribute('data-fill')
-    })
-    .style('stroke', borderColor)
-    .style('stroke-width', 0.5)
-    .attr('class', 'map-subunit')
-    .attr('d', path)
-    .on('mouseover', function (data) {
-      d3.select(this)
-        .style('fill', '#FFCCBC')
-        .style('stroke', '#FF5722')
-        .style('stroke-width', 2)
+    .each(function _updateSubunit(thisData) {
+      const thisSubunit = d3.select(this)
+      const value = subunitValue(thisData)
+      const fill = value === '' ? noDataColor : colorScale(value)
 
-      this.parentNode.appendChild(this)
+      addDefaultSubunitStyle(thisSubunit, fill)
 
-      tooltip
-        .style('opacity', 1)
-        .html(`<div>${data.properties.name}<br /></div>`)
-    })
-    .on('mousemove', function () {
-      tooltip
-        .style('left', (d3.event.pageX + 20) + 'px')
-        .style('top', (d3.event.pageY + 20) + 'px')
-    })
-    .on('mouseout', function () {
-      d3.select(this)
-        .style('fill', function () {
-          return this.getAttribute('data-fill')
+      thisSubunit
+        .attr('d', subunitPath())
+        .on('mouseover', function _onMouseover(data) {
+          this.parentNode.appendChild(this)
+          thisSubunit
+            .style('fill', '#FFCCBC')
+            .style('stroke', '#FF5722')
+            .style('stroke-width', 2)
+
+          tooltip
+            .style('opacity', 1)
+            .html(`<div>${data.properties.name}<br />${value}</div>`)
         })
-        .style('stroke', borderColor)
-        .style('stroke-width', 0.5)
-
-      tooltip.style('opacity', 0)
+        .on('mousemove', () =>
+          tooltip
+            .style('left', (d3.event.pageX + 20) + 'px')
+            .style('top', (d3.event.pageY + 20) + 'px')
+        )
+        .on('mouseout', () => {
+          addDefaultSubunitStyle(thisSubunit, fill)
+          tooltip.style('opacity', 0)
+        })
     })
 }
