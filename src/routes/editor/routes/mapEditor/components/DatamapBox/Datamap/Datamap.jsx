@@ -3,18 +3,37 @@ import d3 from 'd3'
 import { Map } from 'immutable'
 
 import style from './Datamap.css'
+import config from 'config/maps'
 
 export default class Datamap extends Component {
   componentDidMount() {
+    this.renderMap()
+  }
+
+  componentDidUpdate() {
+    d3.select(this.refs.datamap).selectAll('*').remove()
+    this.renderMap()
+  }
+
+  componentWillUnmount() {
+    d3.select(this.refs.datamap).remove()
+  }
+
+  renderMap() {
     const tooltip = d3.select('body').append('div')
       .attr('class', style.tooltip)
       .style('opacity', 0)
 
     const { svgWidth, svgHeight } = this.props
-    const projection = d3.geo.albersUsa().scale(svgWidth).translate([svgWidth / 2, svgHeight / 2])
+    const mapConfig = config.configs[this.props.mapType].mapUi
+    const projectionName = mapConfig.projection
+    const scaleDenominator = mapConfig.scaleDenominator
+
+    const projection = d3.geo[projectionName]().scale(svgWidth / scaleDenominator)
+      .translate([svgWidth / 2, svgHeight / 2])
     const path = d3.geo.path().projection(projection)
 
-    d3.select('#datamap')
+    d3.select(this.refs.datamap)
       .selectAll('path')
       .data(this.props.topoData.get(this.props.mapType))
       .enter()
@@ -27,7 +46,7 @@ export default class Datamap extends Component {
 
         tooltip
           .style('opacity', 1)
-          .html(`<div>${data.properties.name}<br />${data.properties.id}</div>`)
+          .html(`<div>${data.properties.name}<br /></div>`)
       })
       .on('mousemove', function () {
         tooltip
@@ -40,12 +59,8 @@ export default class Datamap extends Component {
       })
   }
 
-  componentWillUnmount() {
-    d3.select('#datamap').remove()
-  }
-
   render() {
-    return <g id="datamap"></g>
+    return <g ref="datamap"></g>
   }
 }
 
