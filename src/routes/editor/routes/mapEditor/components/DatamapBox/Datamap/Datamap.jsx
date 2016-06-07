@@ -10,9 +10,11 @@ export default class Datamap extends Component {
     this.renderMap()
   }
 
-  componentDidUpdate() {
-    d3.select(this.refs.datamap).selectAll('*').remove()
-    this.renderMap()
+  componentDidUpdate(prevProps) {
+    if (prevProps.mapType !== this.props.mapType) {
+      d3.select(this.refs.datamap).selectAll('*').remove()
+      this.renderMap()
+    }
   }
 
   componentWillUnmount() {
