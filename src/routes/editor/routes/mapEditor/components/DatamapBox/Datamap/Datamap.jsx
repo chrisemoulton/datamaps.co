@@ -10,11 +10,9 @@ export default class Datamap extends Component {
     this.renderMap()
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.mapType !== this.props.mapType) {
-      d3.select(this.refs.datamap).selectAll('*').remove()
-      this.renderMap()
-    }
+  componentDidUpdate() {
+    d3.select(this.refs.datamap).selectAll('*').remove()
+    this.renderMap()
   }
 
   componentWillUnmount() {
@@ -26,7 +24,7 @@ export default class Datamap extends Component {
       .attr('class', style.tooltip)
       .style('opacity', 0)
 
-    const { svgWidth, svgHeight } = this.props
+    const { svgWidth, svgHeight, noDataColor, borderColor, colorScale } = this.props
     const mapConfig = config.configs[this.props.mapType].mapUi
     const projectionName = mapConfig.projection
     const scaleDenominator = mapConfig.scaleDenominator
@@ -40,11 +38,23 @@ export default class Datamap extends Component {
       .data(this.props.topoData.get(this.props.mapType))
       .enter()
       .append('path')
-      .style('fill', '#000')
+      .attr('data-fill', (data) => {
+        const subunitData = this.props.regionData.find((datum) => datum.get('code') === data.id)
+        const subunitValue = subunitData ? subunitData.get('value') : null
+        return subunitValue === '' ? noDataColor : colorScale(subunitValue)
+      })
+      .style('fill', function () {
+        return this.getAttribute('data-fill')
+      })
+      .style('stroke', borderColor)
+      .style('stroke-width', 0.5)
       .attr('class', 'map-subunit')
       .attr('d', path)
       .on('mouseover', function (data) {
-        d3.select(this).style('fill', '#fff8ee')
+        d3.select(this)
+          .style('fill', '#FFCCBC')
+          .style('stroke', '#FF5722')
+          .style('stroke-width', 2)
 
         tooltip
           .style('opacity', 1)
@@ -56,7 +66,13 @@ export default class Datamap extends Component {
           .style('top', (d3.event.pageY + 20) + 'px')
       })
       .on('mouseout', function () {
-        d3.select(this).style('fill', '#000')
+        d3.select(this)
+          .style('fill', function () {
+            return this.getAttribute('data-fill')
+          })
+          .style('stroke', borderColor)
+          .style('stroke-width', 0.5)
+
         tooltip.style('opacity', 0)
       })
   }
@@ -71,4 +87,8 @@ Datamap.propTypes = {
   svgHeight: PropTypes.number.isRequired,
   topoData: PropTypes.instanceOf(Map).isRequired,
   mapType: PropTypes.string.isRequired,
+  regionData: PropTypes.instanceOf(Map).isRequired,
+  colorScale: PropTypes.func.isRequired,
+  noDataColor: PropTypes.string.isRequired,
+  borderColor: PropTypes.string.isRequired,
 }
