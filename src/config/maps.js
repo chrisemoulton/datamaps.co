@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   types: [
     { code: 'usa', displayName: 'usa' },
     { code: 'world', displayName: 'world' },
